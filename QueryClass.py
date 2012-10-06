@@ -32,7 +32,7 @@ class SourceQuery(object):
         self.sock.settimeout(self.timeout)
         self.sock.connect((self.ip, self.port))
 
-    def getPint(self):
+    def getPing(self):
         return self.getInfo()['Ping']
 
     def getInfo(self):
@@ -248,6 +248,7 @@ class SourceQuery(object):
         return (s, data[i + 1:])
 
 
+# Just for testing
 if __name__ == '__main__':
     query = SourceQuery("", 27015)
     res = query.getInfo()
