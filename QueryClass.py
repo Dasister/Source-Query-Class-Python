@@ -16,7 +16,7 @@ S2A_INFO_GOLDSRC = chr(0x6D)
 import socket, time, struct
 
 class SourceQuery(object):
-    def __init__(self, addr, port, timeout = 5.0):
+    def __init__(self, addr, port = 27015, timeout = 5.0):
         self.ip, self.port, self.timeout = socket.gethostbyname(addr), port, timeout
         self.sock = False
         self.challenge = False
@@ -249,7 +249,7 @@ class SourceQuery(object):
 
 
 if __name__ == '__main__':
-    query = SourceQuery("46.174.49.35", 27212)
+    query = SourceQuery("", 27015)
     res = query.getInfo()
 
     print(res['Hostname'])
