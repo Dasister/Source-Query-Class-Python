@@ -1,4 +1,4 @@
-Source-Query-Class-Python
+Python Source Query
 =========================
 
 Game Server Query Class written on Python
