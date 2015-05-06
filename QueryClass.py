@@ -60,7 +60,7 @@ class SourceQuery(object):
 
         header, data = self.getByte(data)
         result['Ping'] = int((after - before) * 1000)
-        if chr(int(header)) == S2A_INFO_SOURCE:
+        if chr(header) == S2A_INFO_SOURCE:
             result['Protocol'], data = self.getByte(data)
             result['Hostname'], data = self.getString(data)
             result['Map'], data = self.getString(data)
