@@ -13,13 +13,22 @@ A2S_RULES = b'\xFF\xFF\xFF\xFF\x56'
 S2A_INFO_SOURCE = chr(0x49)
 S2A_INFO_GOLDSRC = chr(0x6D)
 
-import socket, time, struct
+import socket
+import time
+import struct
+import sys
+
 
 class SourceQuery(object):
-    def __init__(self, addr, port = 27015, timeout = 5.0):
+
+    is_third = False
+
+    def __init__(self, addr, port=27015, timeout=5.0):
         self.ip, self.port, self.timeout = socket.gethostbyname(addr), port, timeout
         self.sock = False
         self.challenge = False
+        if sys.version_info >= (3, 0):
+            self.is_third = True
 
     def disconnect(self):
         if self.sock:
@@ -40,95 +49,95 @@ class SourceQuery(object):
         self.sock.send(A2S_INFO)
         before = time.time()
         try:
-            data =  self.sock.recv(4096)
+            data = self.sock.recv(4096)
         except:
             return False
 
         after = time.time()
         data = data[4:]
 
-        self.result = {}
+        result = {}
 
         header, data = self.getByte(data)
-        self.result['Ping'] = int((after - before) * 1000)
-        if chr(header) == S2A_INFO_SOURCE:
-            self.result['Protocol'], data = self.getByte(data)
-            self.result['Hostname'], data = self.getString(data)
-            self.result['Map'], data = self.getString(data)
-            self.result['GameDir'], data = self.getString(data)
-            self.result['GameDesc'], data = self.getString(data)
-            self.result['AppID'], data = self.getShort(data)
-            self.result['Players'], data = self.getByte(data)
-            self.result['MaxPlayers'], data = self.getByte(data)
-            self.result['Bots'], data = self.getByte(data)
-            self.dedicated, data = self.getByte(data)
-            if chr(self.dedicated) == 'd':
-                self.result['Dedicated'] = 'Dedicated'
-            elif self.dedicated == 'l':
-                self.result['Dedicated'] = 'Listen'
+        result['Ping'] = int((after - before) * 1000)
+        if chr(int(header)) == S2A_INFO_SOURCE:
+            result['Protocol'], data = self.getByte(data)
+            result['Hostname'], data = self.getString(data)
+            result['Map'], data = self.getString(data)
+            result['GameDir'], data = self.getString(data)
+            result['GameDesc'], data = self.getString(data)
+            result['AppID'], data = self.getShort(data)
+            result['Players'], data = self.getByte(data)
+            result['MaxPlayers'], data = self.getByte(data)
+            result['Bots'], data = self.getByte(data)
+            dedicated, data = self.getByte(data)
+            if chr(dedicated) == 'd':
+                result['Dedicated'] = 'Dedicated'
+            elif dedicated == 'l':
+                result['Dedicated'] = 'Listen'
             else:
-                self.result['Dedicated'] = 'SourceTV'
+                result['Dedicated'] = 'SourceTV'
 
-            self.os, data = self.getByte(data)
-            if chr(self.os) == 'w':
-                self.result['OS'] = 'Windows'
+            os, data = self.getByte(data)
+            if chr(os) == 'w':
+                result['OS'] = 'Windows'
             else:
-                self.result['OS'] = 'Linux'
-            self.result['Password'], data = self.getByte(data)
-            self.result['Secure'], data = self.getByte(data)
-            if self.result['AppID'] == 2400: # The Ship server
-                self.result['GameMode'], data = self.getByte(data)
-                self.result['WitnessCount'], data = self.getByte(data)
-                self.result['WitnessTime'], data = self.getByte(data)
-            self.result['Version'], data = self.getString(data)
-            self.edf, data = self.getByte(data)
+                result['OS'] = 'Linux'
+            result['Password'], data = self.getByte(data)
+            result['Secure'], data = self.getByte(data)
+            if result['AppID'] == 2400:  # The Ship server
+                result['GameMode'], data = self.getByte(data)
+                result['WitnessCount'], data = self.getByte(data)
+                result['WitnessTime'], data = self.getByte(data)
+            result['Version'], data = self.getString(data)
+            edf, data = self.getByte(data)
             try:
-                if (self.edf & 0x80):
-                    self.result['GamePort'], data = self.getShort(data)
-                if (self.edf & 0x10):
-                    self.result['SteamID'], data = self.getLongLong(data)
-                if (self.edf & 0x40):
-                    self.result['SpecPort'], data = self.getShort(data)
-                    self.result['SpecName'], data = self.getString(data)
-                if (self.edf & 0x10):
-                    self.result['Tags'], data = self.getString(data)
+                if edf & 0x80:
+                    result['GamePort'], data = self.getShort(data)
+                if edf & 0x10:
+                    result['SteamID'], data = self.getLongLong(data)
+                if edf & 0x40:
+                    result['SpecPort'], data = self.getShort(data)
+                    result['SpecName'], data = self.getString(data)
+                if edf & 0x10:
+                    result['Tags'], data = self.getString(data)
             except:
                 pass
         elif chr(header) == S2A_INFO_GOLDSRC:
-            self.result['GameIP'], data = self.getString(data)
-            self.result['Hostname'], data = self.getString(data)
-            self.result['Map'], data = self.getString(data)
-            self.result['GameDir'], data = self.getString(data)
-            self.result['GameDesc'], data = self.getString(data)
-            self.result['Players'], data = self.getByte(data)
-            self.result['MaxPlayers'], data = self.getByte(data)
-            self.result['Version'], data = self.getByte(data)
-            self.dedicated, data = self.getByte(data)
-            if chr(self.dedicated) == 'd':
-                self.result['Dedicated'] = 'Dedicated'
-            elif self.dedicated == 'l':
-                self.result['Dedicated'] = 'Listen'
+            result['GameIP'], data = self.getString(data)
+            result['Hostname'], data = self.getString(data)
+            result['Map'], data = self.getString(data)
+            result['GameDir'], data = self.getString(data)
+            result['GameDesc'], data = self.getString(data)
+            result['Players'], data = self.getByte(data)
+            result['MaxPlayers'], data = self.getByte(data)
+            result['Version'], data = self.getByte(data)
+            dedicated, data = self.getByte(data)
+            if chr(dedicated) == 'd':
+                result['Dedicated'] = 'Dedicated'
+            elif dedicated == 'l':
+                result['Dedicated'] = 'Listen'
             else:
-                self.result['Dedicated'] = 'HLTV'
-            self.os, data = self.getByte(data)
-            if chr(self.os) == 'w':
-                self.result['OS'] = 'Windows'
+                result['Dedicated'] = 'HLTV'
+            os, data = self.getByte(data)
+            if chr(os) == 'w':
+                result['OS'] = 'Windows'
             else:
-                self.result['OS'] = 'Linux'
-            self.result['Password'], data = self.getByte(data)
-            self.result['IsMod'], data = self.getByte(data)
-            if self.result['IsMod']:
-                self.result['URLInfo'], data = self.getString(data)
-                self.result['URLDownload'], data = self.getString(data)
-                data = self.getByte(data)[1] # NULL-Byte
-                self.result['ModVersion'], data = self.getLong(data)
-                self.result['ModSize'], data = self.getLong(data)
-                self.result['ServerOnly'], data = self.getByte(data)
-                self.result['ClientDLL'], data = self.getByte(data)
-            self.result['Secure'], data = self.getByte(data)
-            self.result['Bots'], data = self.getByte(data)
+                result['OS'] = 'Linux'
+            result['Password'], data = self.getByte(data)
+            result['IsMod'], data = self.getByte(data)
+            if result['IsMod']:
+                result['URLInfo'], data = self.getString(data)
+                result['URLDownload'], data = self.getString(data)
+                data = self.getByte(data)[1]  # NULL-Byte
+                result['ModVersion'], data = self.getLong(data)
+                result['ModSize'], data = self.getLong(data)
+                result['ServerOnly'], data = self.getByte(data)
+                result['ClientDLL'], data = self.getByte(data)
+            result['Secure'], data = self.getByte(data)
+            result['Bots'], data = self.getByte(data)
 
-        return self.result
+        return result
 
 # <------------------getInfo() End -------------------------->
 
@@ -163,7 +172,7 @@ class SourceQuery(object):
 
         header, data = self.getByte(data)
         num, data = self.getByte(data)
-        self.result = []
+        result = []
         try:
             for i in range(num):
                 player = {}
@@ -173,12 +182,12 @@ class SourceQuery(object):
                 player['Frags'], data = self.getLong(data)
                 player['Time'], data = self.getFloat(data)
                 player['FTime'] = time.gmtime(int(player['Time']))
-                self.result.append(player)
+                result.append(player)
 
         except:
             pass
 
-        return self.result
+        return result
 
 # <-------------------getPlayers() End ----------------------->
 
@@ -201,58 +210,65 @@ class SourceQuery(object):
                     packets[index] = data[9:]
                 data = ''
                 for i, packet in enumerate(packets):
-                    data = data + packet
+                    data += packet
         except:
             return False
         data = data[4:]
 
         header, data = self.getByte(data)
         num, data = self.getShort(data)
-        self.result = {}
+        result = {}
 
-        #Server sends incomplete packets. Ignore "NumPackets" value.
+        # Server sends incomplete packets. Ignore "NumPackets" value.
         while 1:
             try:
                 ruleName, data = self.getString(data)
                 ruleValue, data = self.getString(data)
                 if ruleValue:
-                    self.result[ruleValue] = ruleName
+                    result[ruleValue] = ruleName
             except:
                 break
 
-        return self.result
+        return result
 
 # <-------------------getRules() End ------------------------->
 
     def getByte(self, data):
-        return (data[0], data[1:])
+        if self.is_third:
+            return data[0], data[1:]
+        else:
+            return ord(data[0]), data[1:]
 
     def getShort(self, data):
-        return (struct.unpack('<h', data[0:2])[0], data[2:])
+        return struct.unpack('<h', data[0:2])[0], data[2:]
 
     def getLong(self, data):
-        return (struct.unpack('<l', data[0:4])[0], data[4:])
+        return struct.unpack('<l', data[0:4])[0], data[4:]
 
     def getLongLong(self, data):
-        return (struct.unpack('<Q', data[0:8])[0], data[8:])
+        return struct.unpack('<Q', data[0:8])[0], data[8:]
 
     def getFloat(self, data):
-        return (struct.unpack('<f', data[0:4])[0], data[4:])
+        return struct.unpack('<f', data[0:4])[0], data[4:]
 
     def getString(self, data):
         s = ""
         i = 0
-        while chr(data[i]) != '\x00':
-            s += chr(data[i])
-            i += 1
-        return (s, data[i + 1:])
+        if not self.is_third:
+            while data[i] != '\x00':
+                s += data[i]
+                i += 1
+        else:
+            while chr(data[i]) != '\x00':
+                s += chr(data[i])
+                i += 1
+        return s, data[i + 1:]
 
 
 # Just for testing
 if __name__ == '__main__':
     query = SourceQuery("", 27015)
     res = query.getInfo()
-
     print(res['Hostname'])
     print(res['Map'])
     print(res['GameDir'])
