@@ -81,6 +81,8 @@ class SourceQuery(object):
             os, data = self.getByte(data)
             if chr(os) == 'w':
                 result['OS'] = 'Windows'
+            elif chr(os) in ('m', 'o'):
+                result['OS'] = 'Mac'
             else:
                 result['OS'] = 'Linux'
             result['Password'], data = self.getByte(data)
@@ -155,7 +157,6 @@ class SourceQuery(object):
         return True
 # <-------------------getChallenge() End --------------------->
 
-
     def getPlayers(self):
         if not self.sock:
             self.connect()
@@ -177,14 +178,16 @@ class SourceQuery(object):
             for i in range(num):
                 player = {}
                 data = self.getByte(data)[1]
-                player['id'] = i + 1 # ID of All players is 0
+                player['id'] = i + 1  # ID of All players is 0
                 player['Name'], data = self.getString(data)
                 player['Frags'], data = self.getLong(data)
                 player['Time'], data = self.getFloat(data)
-                player['FTime'] = time.gmtime(int(player['Time']))
+                ftime = time.gmtime(int(player['Time']))
+                player['FTime'] = ftime
+                player['PrettyTime'] = time.strftime('%H:%M:%S', ftime)
                 result.append(player)
 
-        except:
+        except Exception:
             pass
 
         return result
@@ -267,7 +270,7 @@ class SourceQuery(object):
 
 # Just for testing
 if __name__ == '__main__':
-    query = SourceQuery("", 27015)
+    query = SourceQuery(sys.argv[1], 27015)
     res = query.getInfo()
     print(res['Hostname'])
     print(res['Map'])
@@ -279,15 +282,14 @@ if __name__ == '__main__':
 
     players = query.getPlayers()
 
-    if players:
-        for i in range(players.__len__()):
-            print("%i %s %i %i:%i:%i" % (players[i]['id'], players[i]['Name'], players[i]['Frags'], players[i]['FTime'][3], players[i]['FTime'][4], players[i]['FTime'][5]))
+    for player in players:
+        print("{id:<2} {Name:<35} {Frags:<5} {PrettyTime}".format(**player))
 
     rules = query.getRules()
 
-    print(rules.__len__())
-    if rules:
-        for i in rules.keys():
-            print("%s %s" % (i, rules[i]))
+    print "\n{0:d} Rules".format(len(rules))
+    print "------------------------------------"
+    for rule_name, value in rules.items():
+        print("{0:<5} {1}".format(rule_name, value))
     query.disconnect()
     query = False
