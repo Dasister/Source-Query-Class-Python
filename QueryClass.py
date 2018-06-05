@@ -21,35 +21,39 @@ S2A_INFO_GOLDSRC = chr(0x6D)
 
 class SourceQuery(object):
     is_third = False
+    __sock = None
+    __challenge = None
 
     def __init__(self, addr, port=27015, timeout=5.0):
         self.ip, self.port, self.timeout = socket.gethostbyname(addr), port, timeout
-        self.sock = None
-        self.challenge = None
         if sys.version_info >= (3, 0):
             self.is_third = True
 
     def disconnect(self):
-        if self.sock is not None:
-            self.sock.close()
-            self.sock = False
+        """ Close socket """
+        if self.__sock is not None:
+            self.__sock.close()
+            self.__sock = False
 
     def connect(self):
+        """ Opens a new socket """
         self.disconnect()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.settimeout(self.timeout)
-        self.sock.connect((self.ip, self.port))
+        self.__sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.__sock.settimeout(self.timeout)
+        self.__sock.connect((self.ip, self.port))
 
     def get_ping(self):
+        """ Get ping to server """
         return self.get_info()['Ping']
 
     def get_info(self):
-        if self.sock is None:
+        """ Retrieves information about the server including, but not limited to: its name, the map currently being played, and the number of players. """
+        if self.__sock is None:
             self.connect()
-        self.sock.send(A2S_INFO)
+        self.__sock.send(A2S_INFO)
         before = time.time()
         try:
-            data = self.sock.recv(4096)
+            data = self.__sock.recv(4096)
         except:
             return False
 
@@ -144,29 +148,31 @@ class SourceQuery(object):
     # <------------------getInfo() End -------------------------->
 
     def get_challenge(self):
-        if self.sock is None:
+        """ Get challenge number for A2S_PLAYER and A2S_RULES queries. """
+        if self.__sock is None:
             self.connect()
-        self.sock.send(A2S_PLAYERS + b'0xFFFFFFFF')
+        self.__sock.send(A2S_PLAYERS + b'0xFFFFFFFF')
         try:
-            data = self.sock.recv(4096)
+            data = self.__sock.recv(4096)
         except:
             return False
 
-        self.challenge = data[5:]
+        self.__challenge = data[5:]
 
         return True
 
     # <-------------------getChallenge() End --------------------->
 
     def get_players(self):
-        if self.sock is None:
+        """ Retrieve information about the players currently on the server. """
+        if self.__sock is None:
             self.connect()
-        if self.challenge is None:
+        if self.__challenge is None:
             self.get_challenge()
 
-        self.sock.send(A2S_PLAYERS + self.challenge)
+        self.__sock.send(A2S_PLAYERS + self.__challenge)
         try:
-            data = self.sock.recv(4096)
+            data = self.__sock.recv(4096)
         except:
             return False
 
@@ -196,20 +202,21 @@ class SourceQuery(object):
     # <-------------------getPlayers() End ----------------------->
 
     def get_rules(self):
-        if self.sock is None:
+        """ Returns the server rules, or configuration variables in name/value pairs. """
+        if self.__sock is None:
             self.connect()
-        if self.challenge is None:
+        if self.__challenge is None:
             self.get_challenge()
 
-        self.sock.send(A2S_RULES + self.challenge)
+        self.__sock.send(A2S_RULES + self.__challenge)
         try:
-            data = self.sock.recv(4096)
+            data = self.__sock.recv(4096)
             if data[0] == '\xFE':
                 num_packets = ord(data[8]) & 15
                 packets = [' ' for i in range(num_packets)]
                 for i in range(num_packets):
                     if i != 0:
-                        data = self.sock.recv(4096)
+                        data = self.__sock.recv(4096)
                     index = ord(data[8]) >> 4
                     packets[index] = data[9:]
                 data = ''
